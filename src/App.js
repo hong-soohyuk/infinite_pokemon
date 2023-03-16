@@ -28,7 +28,6 @@ const PokemonList = () => {
       })
     );
 
-    console.log(data.next);
     return { results, nextPage: page + 20 };
   };
 
