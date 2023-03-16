@@ -2,7 +2,7 @@ import "./styles.css";
 import {
   QueryClient,
   QueryClientProvider,
-  useInfiniteQuery
+  useInfiniteQuery,
 } from "react-query";
 import axios from "axios";
 
@@ -16,11 +16,9 @@ const PokemonCard = ({ name, spriteUrl }) => {
 };
 
 const PokemonList = () => {
-  const fetchPokemon = async (
-    key,
-    nextUrl = "https://pokeapi.co/api/v2/pokemon"
-  ) => {
-    const { data } = await axios.get(nextUrl);
+  const fetchPokemon = async (page) => {
+    const pokemonUrl = `https://pokeapi.co/api/v2/pokemon?offset=${page}&limit=20`;
+    const { data } = await axios.get(pokemonUrl);
 
     const results = await Promise.all(
       data.results.map(async (pokemon) => {
@@ -30,8 +28,8 @@ const PokemonList = () => {
       })
     );
 
-    console.log(data);
-    return { results, nextUrl: data.next };
+    console.log(data.next);
+    return { results, nextPage: page + 20 };
   };
 
   const {
@@ -40,10 +38,14 @@ const PokemonList = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-    error
-  } = useInfiniteQuery("pokemons", fetchPokemon, {
-    getNextPageParam: (lastPage) => lastPage.nextUrl
-  });
+    error,
+  } = useInfiniteQuery(
+    "pokemons",
+    ({ pageParam = 0 }) => fetchPokemon(pageParam),
+    {
+      getNextPageParam: (lastPage) => lastPage.nextPage,
+    }
+  );
 
   if (isLoading) return <div>Loading~</div>;
   if (error) return <div>Error!</div>;
@@ -60,7 +62,7 @@ const PokemonList = () => {
         ))
       )}
       {hasNextPage && (
-        <button onClick={fetchNextPage} disabled={isFetchingNextPage}>
+        <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
           {isFetchingNextPage ? "Loading more..." : "Load More"}
         </button>
       )}
